@@ -13,7 +13,12 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    "noEmit": true,
+
+    /* Solo emite los tipos (.d.ts); el JS lo genera Vite */
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist",
+    "rootDir": "src",
     "jsx": "react-jsx",
 
     /* Linting */

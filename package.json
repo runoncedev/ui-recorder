@@ -1,6 +1,10 @@
 {
   "name": "ui-recorder",
   "version": "1.0.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev"
+  },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
