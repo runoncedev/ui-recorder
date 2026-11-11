@@ -1,5 +1,5 @@
-// Estado de la tecla Alt (Option) mientras se graba, y la última posición del mouse: el widget los usa
-// para mostrar el fantasma del cursor que indica que el próximo click se graba como "mover".
+// State of the Alt (Option) key while recording, and the last mouse position: the widget uses them
+// to show the cursor ghost that indicates the next click is recorded as a "rest".
 
 let alt = false
 let pointer = { x: 0, y: 0 }

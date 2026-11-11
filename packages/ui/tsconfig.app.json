@@ -14,7 +14,7 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
 
-    /* Solo emite los tipos (.d.ts); el JS lo genera Vite */
+    /* Only emits the types (.d.ts); Vite generates the JS */
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "dist",

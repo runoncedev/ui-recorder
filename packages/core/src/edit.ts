@@ -1,13 +1,13 @@
 import { getState, setState } from "./store"
 import type { Script, Step } from "./types"
 
-/** Pausa corta que se hace después de cada click si la persona no puso otra */
+/** Short pause after each click if the person did not set another */
 export const DEFAULT_STEP_PAUSE_MS = 750
 
 /**
- * Pausa de una línea del timeline. La línea `gap` es la que sigue a la posición
- * `gap`: -1 es la del inicio (antes del primer click) y N la que viene después
- * del click del paso N (la última, antes del final).
+ * Pause of a timeline line. Line `gap` is the one that follows position
+ * `gap`: -1 is the start one (before the first click) and N the one that comes after
+ * the click of step N (the last one, before the end).
  */
 export function getGapPause(script: Script | null, gap: number): number {
     if (!script) return 0
@@ -28,9 +28,9 @@ export function setGapPause(gap: number, ms: number) {
 }
 
 /**
- * Borra un paso. Se asume que el estado de la app ya es el correcto para ese
- * lugar del guion (los pasos anteriores no cambian), así que la posición se
- * queda donde estaba: ahora apunta al paso siguiente, o al final.
+ * Deletes a step. It is assumed that the app state is already the right one for that
+ * place in the script (the previous steps do not change), so the position
+ * stays where it was: it now points to the next step, or to the end.
  */
 export function removeStep(index: number) {
     const { script, selected } = getState()
@@ -40,17 +40,17 @@ export function removeStep(index: number) {
     setState({ script: { ...script, steps }, selected: next })
 }
 
-/** Dónde queda el cursor parado en el inicio si la persona no lo movió */
+/** Where the cursor is parked at the start if the person did not move it */
 export const DEFAULT_PARK = { x: 0.5, y: 0.5 }
 
-/** Solo el inicio tiene un cursor propio: el final es el último paso (por ejemplo un reposo del cursor con Alt + click) */
+/** Only the start has its own cursor: the end is the last step (for example a cursor rest with Alt + click) */
 export type ParkKind = "start"
 
 export function parkFraction(script: Script | null, _kind: ParkKind) {
     return script?.startCursor ?? DEFAULT_PARK
 }
 
-/** El punto del inicio en píxeles de la ventana actual (se guarda como fracción: vale para cualquier tamaño) */
+/** The start point in pixels of the current window (stored as a fraction: valid for any size) */
 export function parkPoint(script: Script | null, kind: ParkKind) {
     const f = parkFraction(script, kind)
     return { x: f.x * window.innerWidth, y: f.y * window.innerHeight }
@@ -63,7 +63,7 @@ export function setParkCursor(_kind: ParkKind, point: { x: number; y: number }) 
     setState({ script: { ...script, startCursor: clamped } })
 }
 
-/** Cambia campos de un paso (por ejemplo, el punto del cursor al ajustarlo en el modo apuntar) */
+/** Changes fields of a step (for example, the cursor point when adjusting it in aim mode) */
 export function patchStep(index: number, patch: Partial<Step>) {
     const { script } = getState()
     if (!script || !script.steps[index]) return

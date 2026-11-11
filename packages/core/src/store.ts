@@ -1,7 +1,7 @@
 import type { RecorderState, Script } from "./types"
 
-// Estado en localStorage: sobrevive a las recargas completas, que es lo que
-// hace falta para viajar a un paso (cargar startUrl de nuevo).
+// State in localStorage: it survives full reloads, which is what is needed
+// to travel to a step (loading startUrl again).
 
 const KEY = "recorder:v1"
 
@@ -22,10 +22,10 @@ const EMPTY: RecorderState = {
 }
 
 /**
- * Al cargar la página el DOM es nuevo, así que la posición que había quedado guardada ya no es cierta: sería
- * "después del paso 5" sobre una página limpia, y para que lo fuera habría que repetir todo hasta ahí. Una carga
- * normal (no la de un viaje, que se completa solo, ni una grabación en curso) vuelve entonces al inicio, y lo que
- * dependía de esa posición (línea abierta, modo apuntar, errores) se limpia. Lo que está guardado en el guion no cambia.
+ * When the page loads the DOM is new, so the saved position is no longer true: it would be
+ * "after step 5" on a clean page, and for that to be true everything up to there would have to be repeated. A normal
+ * load (not a trip's, which completes by itself, nor a recording in progress) goes back to the start, and whatever
+ * depended on that position (open line, aim mode, errors) is cleared. What is saved in the script does not change.
  */
 function atPageLoad(saved: RecorderState): RecorderState {
     if (saved.pending !== null || saved.recording) return saved
@@ -43,13 +43,13 @@ function atPageLoad(saved: RecorderState): RecorderState {
 }
 
 /**
- * Migración: el paso en el que el cursor llega a un elemento y se queda, sin acción, antes se llamaba `move` y ahora
- * `rest` (todos los pasos mueven el cursor, ese es el que no hace otra cosa). Los guiones guardados con el nombre
- * viejo se convierten al cargar.
+ * Migration: the step where the cursor arrives at an element and stays, with no action, used to be called `move` and is now
+ * `rest` (every step moves the cursor, that one is the one that does nothing else). Scripts saved with the old
+ * name are converted on load.
  */
 function migrate(saved: RecorderState): RecorderState {
     const script = saved.script
-    // `kind` ya no admite "move" en el tipo, pero un guion viejo guardado sí lo trae
+    // `kind` no longer allows "move" in the type, but an old saved script does carry it
     const old = (script?.steps ?? []) as { kind?: string }[]
     if (!script || !old.some((step) => step.kind === "move")) return saved
     const steps = old.map((step) => (step.kind === "move" ? { ...step, kind: "rest" } : step)) as Script["steps"]
@@ -62,12 +62,12 @@ function load(): RecorderState {
         if (raw) {
             const parsed: RecorderState = { ...EMPTY, ...JSON.parse(raw) }
             const state = atPageLoad(migrate(parsed))
-            // Se guarda ya normalizado, así lo que queda en localStorage coincide con lo que se ve
+            // Saved already normalized, so what is in localStorage matches what is shown
             if (state !== parsed) localStorage.setItem(KEY, JSON.stringify(state))
             return state
         }
     } catch {
-        // sin localStorage el editor funciona solo hasta la próxima recarga
+        // without localStorage the editor only works until the next reload
     }
     return EMPTY
 }
@@ -84,7 +84,7 @@ export function setState(patch: Partial<RecorderState>) {
     try {
         localStorage.setItem(KEY, JSON.stringify(state))
     } catch {
-        // ver load()
+        // see load()
     }
     listeners.forEach((listener) => listener())
 }

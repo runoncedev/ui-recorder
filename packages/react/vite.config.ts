@@ -4,8 +4,8 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   build: {
-    // No vaciar dist/ en cada rebuild del --watch: ahí viven los .d.ts que emite tsc.
-    // El build completo lo limpia con `rm -rf dist`.
+    // Do not empty dist/ on every --watch rebuild: the .d.ts files emitted by tsc live there.
+    // The full build cleans it with `rm -rf dist`.
     emptyOutDir: false,
     lib: {
       entry: 'src/index.ts',
@@ -13,7 +13,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      // Todo afuera: react lo pone la app anfitriona y ui es una dependencia.
+      // Everything outside: react is provided by the host app and ui is a dependency.
       external: ['react', 'react/jsx-runtime', '@ui-recorder/ui'],
     },
   },

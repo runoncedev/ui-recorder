@@ -4,15 +4,15 @@ import { ROOT_ATTR, type Step } from "./types"
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n))
 
-/** Eventos de mouse que la página no debe ver cuando el click es un "mover" (Alt + click) */
+/** Mouse events the page must not see when the click is a "rest" (Alt + click) */
 const BLOCKED = ["pointerdown", "mousedown", "pointerup", "mouseup", "click", "dblclick", "auxclick"]
 
 const inWidget = (event: Event) =>
     event.composedPath().some((node) => node instanceof Element && node.hasAttribute(ROOT_ATTR))
 
 /**
- * El paso de reposo que graba un Alt + click en (x, y): el cursor llega ahí y se queda, sin acción. Un reposo no actúa sobre
- * ningún elemento, así que siempre apunta al `html`, medido contra la ventana visible: el offset es la fracción de la ventana.
+ * The rest step recorded by an Alt + click at (x, y): the cursor arrives there and stays, with no action. A rest does not act on
+ * any element, so it always points to `html`, measured against the visible window: the offset is the fraction of the window.
  */
 function restStepAt(x: number, y: number): Step {
     return {
@@ -23,31 +23,31 @@ function restStepAt(x: number, y: number): Step {
 }
 
 /**
- * Al terminar de grabar se agrega solo un último paso (salvo que el último que grabó la persona ya sea un reposo): como si la persona hubiera hecho Alt + click en el medio de
- * la pantalla (un reposo del cursor, sin click). Es un paso más (se ajusta como cualquier otro); el último paso del guion, si es
- * un reposo (este o uno que grabó la persona), se muestra con una bandera;
- * el guion termina ahí, sin una espera final.
+ * When recording ends a last step is added automatically (unless the last one the person recorded is already a rest): as if the person had done Alt + click in the middle of
+ * the screen (a cursor rest, with no click). It is one more step (adjusted like any other); the last step of the script, if it is
+ * a rest (this one or one the person recorded), is shown with a flag;
+ * the script ends there, with no final wait.
  */
 export function appendFinalStep() {
     const { script } = getState()
     if (!script || script.steps.length === 0) return
-    // Si la persona ya terminó con un reposo del cursor (un Alt + click), ese es el final que quiso: no se agrega otro
+    // If the person already ended with a cursor rest (an Alt + click), that is the end they wanted: no other is added
     if (script.steps[script.steps.length - 1].kind === "rest") return
     const x = window.innerWidth / 2
     const y = window.innerHeight / 2
     setState({ script: { ...script, steps: [...script.steps, restStepAt(x, y)] } })
 }
 
-/** Cuánto tiempo después de una rueda, un touch o una tecla de scroll se considera que un scroll lo hizo la persona */
+/** How long after a wheel, a touch or a scroll key a scroll is considered to have been made by the person */
 const USER_SCROLL_MS = 700
-/** Un scroll se cierra (y pasa a ser un paso) cuando pasan tantos ms sin que siga scrolleando */
+/** A scroll closes (and becomes a step) when that many ms pass without it continuing to scroll */
 const SCROLL_SETTLE_MS = 250
 const SCROLL_KEYS = new Set([" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"])
 
-/** El elemento que scrollea la página entera (`html`, o `body` en modo quirks) */
+/** The element that scrolls the whole page (`html`, or `body` in quirks mode) */
 export const pageScroller = () => document.scrollingElement ?? document.documentElement
 
-/** La parte visible de un elemento que scrollea: toda la ventana si es la página, o su caja recortada a la ventana */
+/** The visible part of a scrolling element: the whole window if it is the page, or its box clipped to the window */
 export function visibleBox(el: Element) {
     if (el === pageScroller()) return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight }
     const r = el.getBoundingClientRect()
@@ -59,7 +59,7 @@ export function visibleBox(el: Element) {
     }
 }
 
-/** Los campos donde se graba el tipeo. Las contraseñas no: el guion queda en localStorage y se puede exportar */
+/** The fields where typing is recorded. Not passwords: the script stays in localStorage and can be exported */
 const TYPABLE_INPUT_TYPES = new Set(["", "text", "search", "email", "url", "tel", "number"])
 
 export function isTypable(t: EventTarget | null): t is HTMLElement {
@@ -68,32 +68,32 @@ export function isTypable(t: EventTarget | null): t is HTMLElement {
     return t instanceof HTMLElement && t.isContentEditable
 }
 
-/** El valor actual de un campo de texto (o de un elemento editable) */
+/** The current value of a text field (or an editable element) */
 export function readValue(el: HTMLElement) {
     return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : (el.textContent ?? "")
 }
 
-/** Cuánto se scrolleó, como fracción del recorrido posible (un eje sin recorrido cuenta como 0) */
+/** How much was scrolled, as a fraction of the possible range (an axis with no range counts as 0) */
 function scrollFraction(position: number, range: number) {
     return range > 0 ? clamp(position / range) : 0
 }
 
-// Para cerrar el scroll pendiente antes de que el estado cambie por otra razón (por ejemplo, al parar de grabar)
+// To close the pending scroll before the state changes for another reason (for example, when recording stops)
 let flushPending: (() => void) | null = null
 
-/** Cierra el scroll que haya quedado a medias y lo deja grabado como un paso */
+/** Closes the scroll left half-done and records it as a step */
 export function flushRecording() {
     flushPending?.()
 }
 
 /**
- * Escucha los clicks reales del usuario (en captura, antes de que la app los
- * procese, para leer el DOM tal como estaba). Ignora los del propio widget y
- * los sintéticos, así que reproducir un guion no lo regraba.
+ * Listens to the user's real clicks (in capture, before the app
+ * processes them, to read the DOM as it was). Ignores the widget's own and
+ * synthetic ones, so playing a script does not re-record it.
  *
- * Con Alt (Option) apretado, el click se graba como un paso `rest`: el cursor se queda ahí, sin acción. Se corta
- * en captura (todos los eventos del gesto, no solo el click) para que la página no se entere: no
- * abre nada, no descarga el link, no cambia el foco.
+ * With Alt (Option) held, the click is recorded as a `rest` step: the cursor stays there, with no action. It is cut
+ * in capture (all the events of the gesture, not only the click) so the page does not find out: it does not
+ * open anything, does not download the link, does not change focus.
  */
 export function startRecording(onStep: (step: Step) => void) {
     const block = (event: MouseEvent) => {
@@ -126,8 +126,8 @@ export function startRecording(onStep: (step: Step) => void) {
     }
 
     // --- Scroll ---------------------------------------------------------------------------------
-    // Un evento de scroll no dice quién lo provocó (también lo disparan la app y el propio navegador), así
-    // que solo se graban los que vienen justo después de un gesto de la persona.
+    // A scroll event does not say who caused it (the app and the browser itself also fire them), so
+    // only the ones that come right after a gesture of the person are recorded.
     let userScrollUntil = 0
     let draggingScrollbar = false
     let pressingWidget = false
@@ -139,12 +139,12 @@ export function startRecording(onStep: (step: Step) => void) {
     const onKey = (e: KeyboardEvent) => {
         if (SCROLL_KEYS.has(e.key) && !isEditable(e.target)) markUserScroll()
     }
-    // Arrastrar la barra de scroll: el click cae sobre el borde del elemento, fuera de su contenido
+    // Dragging the scroll bar: the click lands on the edge of the element, outside its content
     const onPointerDown = (e: PointerEvent) => {
         const t = e.target
-        // Apretar algo del widget (por ejemplo "detener") le saca el foco al campo en el que se escribía, pero
-        // eso no debe cerrar la escritura ahí: sumar un paso agranda la barra y mueve el botón entre apretar y
-        // soltar, y el click se perdería. Lo cierra el propio botón al hacer click.
+        // Pressing something in the widget (for example "stop") takes focus away from the field being typed in, but
+        // that must not close the typing there: adding a step makes the bar bigger and moves the button between press and
+        // release, and the click would be lost. The button itself closes it on click.
         if (inWidget(e)) pressingWidget = true
         if (!(t instanceof Element) || inWidget(e)) return
         const onBar =
@@ -161,13 +161,13 @@ export function startRecording(onStep: (step: Step) => void) {
     }
     const onPointerUp = () => {
         draggingScrollbar = false
-        // El blur llega entre apretar y soltar; se baja la marca recién después
+        // The blur arrives between press and release; the mark is lowered only afterwards
         setTimeout(() => {
             pressingWidget = false
         }, 0)
     }
 
-    // Dónde está el mouse (la rueda y los movimientos traen su posición): se guarda con cada scroll
+    // Where the mouse is (the wheel and movements carry their position): it is saved with each scroll
     let lastPointer: { x: number; y: number } | null = null
     const track = (e: MouseEvent) => {
         lastPointer = { x: e.clientX, y: e.clientY }
@@ -182,8 +182,8 @@ export function startRecording(onStep: (step: Step) => void) {
         pending = null
         if (!el) return
         const isPage = el === pageScroller()
-        // El mouse como fracción de la parte visible del área; si estaba fuera de ella (scroll con el teclado)
-        // no se guarda y al reproducir el cursor va al centro
+        // The mouse as a fraction of the visible part of the area; if it was outside it (keyboard scroll)
+        // it is not saved and on playback the cursor goes to the center
         const box = visibleBox(el)
         const mouse = pendingPointer
         const inside =
@@ -215,7 +215,7 @@ export function startRecording(onStep: (step: Step) => void) {
         const el = t === document ? pageScroller() : t instanceof Element ? t : null
         if (!el) return
         flushTyping()
-        // Si pasó a scrollear otra cosa, lo anterior queda cerrado en su lugar
+        // If it moved on to scrolling something else, the previous one is closed in place
         if (pending && pending !== el) flush()
         pending = el
         pendingPointer = lastPointer
@@ -223,9 +223,9 @@ export function startRecording(onStep: (step: Step) => void) {
         settleTimer = window.setTimeout(flush, SCROLL_SETTLE_MS)
     }
 
-    // --- Tipeo -------------------------------------------------------------------------------
-    // Escribir en un campo es un solo paso (no uno por tecla): se cierra al salir del campo, al hacer otro
-    // click, al scrollear o al parar de grabar, y guarda cómo quedó el texto.
+    // --- Typing -------------------------------------------------------------------------------
+    // Typing into a field is a single step (not one per key): it closes when leaving the field, on another
+    // click, on scrolling or when recording stops, and saves how the text ended up.
     let typing: HTMLElement | null = null
     const flushTyping = () => {
         const el = typing
@@ -236,7 +236,7 @@ export function startRecording(onStep: (step: Step) => void) {
     const onInput = (e: Event) => {
         const t = e.target
         if (!e.isTrusted || inWidget(e) || !isTypable(t)) return
-        // Si había un scroll a medias, queda antes que el tipeo; si se pasó a otro campo, el anterior se cierra
+        // If there was a scroll half-done, it goes before the typing; if it moved to another field, the previous one is closed
         flush()
         if (typing && typing !== t) flushTyping()
         typing = t
@@ -246,7 +246,7 @@ export function startRecording(onStep: (step: Step) => void) {
         if (typing && e.target === typing) flushTyping()
     }
 
-    // Un click con un scroll a medias: primero se cierra el scroll, así los pasos quedan en el orden en que pasaron
+    // A click with a scroll half-done: the scroll is closed first, so the steps stay in the order they happened
     const clickInOrder = (event: MouseEvent) => {
         flushTyping()
         flush()

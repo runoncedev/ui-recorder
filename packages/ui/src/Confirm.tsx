@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { ROOT_ATTR } from "@ui-recorder/core"
 
-/** Marca el botón que abre la confirmación: sus propios clicks la abren y la cierran, no cuentan como "fuera" */
+/** Marks the button that opens the confirmation: its own clicks open and close it, they do not count as "outside" */
 export const CONFIRM_TRIGGER_ATTR = "data-recorder-confirm-trigger"
 const CONFIRM_ATTR = "data-recorder-confirm"
 
@@ -18,9 +18,9 @@ const button: React.CSSProperties = {
 }
 
 /**
- * Confirmación chica que flota arriba de la barra, con una flecha que señala el botón que la abrió.
- * Se cancela con Esc, con "Cancelar" o con un click fuera; el foco arranca en "Cancelar" para que un
- * Enter distraído no confirme.
+ * Small confirmation that floats above the bar, with an arrow pointing at the button that opened it.
+ * It is cancelled with Esc, with "Cancel" or with a click outside; focus starts on "Cancel" so that an
+ * absent-minded Enter does not confirm.
  */
 export function ConfirmPopover({
     kind,
@@ -39,7 +39,7 @@ export function ConfirmPopover({
 }) {
     const [pos, setPos] = useState<{ left: number; bottom: number; arrow: number } | null>(null)
     const cancelButton = useRef<HTMLButtonElement>(null)
-    // Los callbacks cambian en cada render del padre: los listeners usan siempre el último
+    // The callbacks change on every render of the parent: the listeners always use the latest one
     const cancel = useRef(onCancel)
     cancel.current = onCancel
 
@@ -60,7 +60,7 @@ export function ConfirmPopover({
         }
         place()
         window.addEventListener("resize", place)
-        // La barra cambia de ancho (animado) y el botón se corre con ella
+        // The bar changes width (animated) and the button shifts with it
         const observer = new ResizeObserver(place)
         const bar = trigger()?.closest(`[${ROOT_ATTR}]`)
         if (bar) observer.observe(bar)
@@ -124,7 +124,7 @@ export function ConfirmPopover({
                     onClick={onCancel}
                     style={{ ...button, background: "#3f3f46" }}
                 >
-                    Cancelar
+                    Cancel
                 </button>
                 <button
                     type="button"

@@ -1,38 +1,38 @@
-/** Un click grabado: qué elemento y en qué punto de él (0..1), nunca coordenadas de página */
+/** A recorded click: which element and at which point of it (0..1), never page coordinates */
 export type Step = {
     /**
-     * Vacío = un punto libre de la ventana (un paso de reposo sobre una zona sin elementos): `offset` es entonces
-     * una fracción de la ventana y no del elemento.
+     * Empty = a free point of the window (a rest step over an area with no elements): `offset` is then
+     * a fraction of the window, not of the element.
      */
     selector: string
     /**
-     * `rest`: el cursor llega y se queda ahí, sin hacer nada más (se graba con Alt + click). Todos los pasos mueven
-     * el cursor hasta su objetivo; este es el que no hace otra cosa. `scroll` scrollea el
-     * elemento del selector (`html` es la página) hasta `offset`. `type` escribe `text` en el campo. Sin valor: click
+     * `rest`: the cursor arrives and stays there, doing nothing else (recorded with Alt + click). Every step moves
+     * the cursor to its target; this is the one that does nothing else. `scroll` scrolls the
+     * element of the selector (`html` is the page) to `offset`. `type` types `text` into the field. No value: click
      */
     kind?: "click" | "rest" | "scroll" | "type"
     /**
-     * Click y move: el punto dentro del elemento (0..1). Scroll: hasta dónde se scrolleó, como fracción del
-     * recorrido posible en cada eje (0 = arriba o a la izquierda, 1 = el final)
+     * Click and rest: the point inside the element (0..1). Scroll: how far it was scrolled, as a fraction of the
+     * possible range on each axis (0 = top or left, 1 = the end)
      */
     offset: { x: number; y: number }
     /**
-     * Solo scroll: dónde estaba el mouse mientras se scrolleaba, como fracción de la parte visible del área (0..1).
-     * Sin valor (por ejemplo si se scrolleó con el teclado): el centro
+     * Scroll only: where the mouse was while scrolling, as a fraction of the visible part of the area (0..1).
+     * No value (for example if it was scrolled with the keyboard): the center
      */
     at?: { x: number; y: number }
-    /** Solo `type`: el texto que quedó en el campo al terminar de escribir (se tipea letra por letra al reproducir) */
+    /** `type` only: the text left in the field when typing ended (it is typed letter by letter on playback) */
     text?: string
-    /** Cuánto se queda la reproducción después de este paso (ms). Sin valor: una pausa corta por defecto */
+    /** How long playback stays after this step (ms). No value: a short default pause */
     pauseAfter?: number
 }
 
 export type Script = {
-    /** URL desde la que arranca el guion; ir al paso N = cargarla y repetir los pasos anteriores */
+    /** URL the script starts from; going to step N = loading it and repeating the previous steps */
     startUrl: string
-    /** Cuánto se queda la página recién cargada antes del primer click (ms). Sin valor: nada */
+    /** How long the freshly loaded page stays before the first click (ms). No value: none */
     startPause?: number
-    /** Dónde está el cursor en el inicio, como fracción de la ventana (0..1). Sin valor: el centro */
+    /** Where the cursor is at the start, as a fraction of the window (0..1). No value: the center */
     startCursor?: { x: number; y: number }
     steps: Step[]
 }
@@ -40,35 +40,35 @@ export type Script = {
 export type RecorderState = {
     script: Script | null
     recording: boolean
-    /** Posición: "después del paso N" (el click ya se hizo). -1 es el inicio, sin ningún click; null, sin posición conocida */
+    /** Position: "after step N" (its click is already done). -1 is the start, with no click; null, no known position */
     selected: number | null
-    /** Viaje en curso: tras recargar hay que ejecutar los pasos anteriores a este */
+    /** Trip in progress: after reloading, the steps before this one must be run */
     pending: number | null
-    /** Línea (pausa) seleccionada: -1 es la del inicio y N la que sigue al paso N. Abre la barra de pausa */
+    /** Selected line (pause): -1 is the start one and N the one that follows step N. Opens the pause bar */
     gap: number | null
-    /** Velocidad de la corrida en curso: 1 al reproducir, más al viajar a un paso (cámara rápida) */
+    /** Speed of the current run: 1 when playing, higher when traveling to a step (fast-forward) */
     speed: number
-    /** La capa de la corrida oscurece la página: solo en los viajes en cámara rápida que no son un único paso en el sitio (ese es instantáneo y la capa se vería como un parpadeo) */
+    /** The run overlay dims the page: only for fast-forward trips that are not a single in-place step (that one is instant and the overlay would look like a flicker) */
     dim: boolean
-    /** Pausa que se está cumpliendo ahora: qué línea y cuánto dura (la línea se llena en ese tiempo). `id` reinicia la animación */
+    /** Pause currently elapsing: which line and how long it lasts (the line fills over that time). `id` restarts the animation */
     waiting: { gap: number; ms: number; id: number } | null
-    /** Paso que se está ejecutando durante un viaje o una reproducción */
+    /** Step being executed during a trip or a playback */
     current: number | null
-    /** Paso cuyo elemento no se encontró al ejecutar */
+    /** Step whose element was not found when running */
     failed: number | null
     /**
-     * Modo apuntar: índice del paso cuyo cursor se está ajustando. Abrir una línea siempre lo activa: la posición es
-     * el estado anterior a ese paso y su cursor queda posado sobre el objetivo, sin haber hecho la acción.
+     * Aim mode: index of the step whose cursor is being adjusted. Opening a line always turns it on: the position is
+     * the state before that step and its cursor rests on the target, without having done the action.
      */
     aim: number | null
-    /** Línea que hay que volver a abrir al terminar el viaje que se hizo para llegar a su estado (sobrevive a la recarga) */
+    /** Line to reopen when the trip made to reach its state ends (survives the reload) */
     reopenGap: number | null
-    /** El aviso del paso que falló ya se cerró: el paso sigue marcado en rojo hasta la próxima acción */
+    /** The notice of the failed step was already closed: the step stays marked in red until the next action */
     failedNoticeClosed: boolean
 }
 
-/** Marca del contenedor del widget: sus clicks no se graban */
+/** Mark of the widget container: its clicks are not recorded */
 export const ROOT_ATTR = "data-recorder-root"
 
-/** Marca todo lo que pone el widget en la página: los selectores de los pasos nunca deben apuntar ahí */
+/** Marks everything the widget puts on the page: step selectors must never point there */
 export const UI_ATTR = "data-recorder-ui"

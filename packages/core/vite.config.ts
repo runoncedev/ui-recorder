@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
-    // No vaciar dist/ en cada rebuild del --watch: ahí viven los .d.ts que emite tsc.
-    // El build completo lo limpia con `rm -rf dist`.
+    // Do not empty dist/ on every --watch rebuild: the .d.ts files emitted by tsc live there.
+    // The full build cleans it with `rm -rf dist`.
     emptyOutDir: false,
     lib: {
       entry: 'src/index.ts',

@@ -3,14 +3,14 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  // React va empaquetado adentro (no está en `external`). En modo librería Vite
-  // no reemplaza esto solo, y sin el reemplazo React se queda con el build de desarrollo.
+  // React is bundled inside (it is not in `external`). In library mode Vite does not
+  // replace this by itself, and without the replacement React keeps its development build.
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
   },
   build: {
-    // No vaciar dist/ en cada rebuild del --watch: ahí viven los .d.ts que emite tsc.
-    // El build completo lo limpia con `rm -rf dist`.
+    // Do not empty dist/ on every --watch rebuild: the .d.ts files emitted by tsc live there.
+    // The full build cleans it with `rm -rf dist`.
     emptyOutDir: false,
     lib: {
       entry: 'src/index.tsx',
@@ -18,7 +18,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      // Una sola copia del store: core se pide como dependencia, no se empaqueta.
+      // A single copy of the store: core is requested as a dependency, it is not bundled.
       external: ['@ui-recorder/core'],
     },
   },

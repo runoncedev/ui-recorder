@@ -6,10 +6,10 @@ import { queryAll } from "./selector"
 import { getState, setState } from "./store"
 import type { Script, Step } from "./types"
 
-/** Al viajar a un paso todo corre como en cámara rápida: el cursor y los clicks se ven, pero más veloces */
+/** When traveling to a step everything runs as in fast-forward: the cursor and the clicks are visible, but faster */
 const TRAVEL_SPEED = 3
 const FIND_TIMEOUT_MS = 5000
-/** Pausa corta entre pasos al viajar en cámara rápida (antes de dividirla por la velocidad): no sigue a la pausa por defecto de la reproducción */
+/** Short pause between steps when traveling in fast-forward (before dividing it by the speed): it does not follow the default playback pause */
 const TRAVEL_STEP_GAP_MS = 250
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -20,7 +20,7 @@ const nextFrames = (n: number) =>
         tick(n)
     })
 
-/** Espera a que el elemento deje de moverse (misma posición en dos frames seguidos): un drawer que todavía se desliza no es un buen blanco */
+/** Waits for the element to stop moving (same position in two consecutive frames): a drawer that is still sliding is not a good target */
 async function waitStable(el: Element) {
     let last = ""
     let same = 0
@@ -37,7 +37,7 @@ export function findElement(selector: string): Element | null {
     return queryAll(selector)[0] ?? null
 }
 
-/** Espera a que el elemento exista (no a que se vea): la app puede estar todavía renderizando */
+/** Waits for the element to exist (not to be visible): the app may still be rendering */
 export function waitFor(selector: string): Promise<Element | null> {
     return new Promise((resolve) => {
         const found = findElement(selector)
@@ -64,7 +64,7 @@ export function waitFor(selector: string): Promise<Element | null> {
     })
 }
 
-/** Click sintético con la secuencia completa de eventos (muchos componentes escuchan pointerdown) */
+/** Synthetic click with the full sequence of events (many components listen to pointerdown) */
 export function clickAt(el: Element, offset: Step["offset"]) {
     const rect = el.getBoundingClientRect()
     const init = {
@@ -73,8 +73,8 @@ export function clickAt(el: Element, offset: Step["offset"]) {
         composed: true,
         view: window,
         button: 0,
-        // El cursor que se ve puede estar fuera del elemento (se ajusta libremente), pero lo que recibe la página
-        // es siempre un click dentro de él
+        // The visible cursor may be outside the element (it is adjusted freely), but what the page receives
+        // is always a click inside it
         clientX: Math.min(rect.right, Math.max(rect.left, rect.left + rect.width * offset.x)),
         clientY: Math.min(rect.bottom, Math.max(rect.top, rect.top + rect.height * offset.y)),
     }
@@ -87,9 +87,9 @@ export function clickAt(el: Element, offset: Step["offset"]) {
     el.dispatchEvent(new MouseEvent("click", { ...init, buttons: 0 }))
 }
 
-/** Punto de la pantalla (viewport) al que apunta un paso sobre su elemento */
+/** Screen (viewport) point a step aims at over its element */
 export function pointOf(el: Element, offset: Step["offset"]) {
-    // El `html` se mide contra la ventana visible, no contra su rectángulo (que es todo el alto de la página)
+    // `html` is measured against the visible window, not against its rectangle (which is the whole height of the page)
     if (el === document.documentElement) {
         const b = visibleBox(pageScroller())
         return { x: b.left + (b.right - b.left) * offset.x, y: b.top + (b.bottom - b.top) * offset.y }
@@ -98,26 +98,26 @@ export function pointOf(el: Element, offset: Step["offset"]) {
     return { x: rect.left + rect.width * offset.x, y: rect.top + rect.height * offset.y }
 }
 
-/** El elemento que scrollea un paso `scroll`: la página entera (`html`) o un contenedor */
+/** The element a `scroll` step scrolls: the whole page (`html`) or a container */
 export function scrollTarget(step: Step): Element | null {
     return step.selector === "html" ? pageScroller() : findElement(step.selector)
 }
 
 /**
- * Dónde queda el cursor en un paso: sobre el punto del click o del reposo, o donde estaba el mouse dentro de la
- * parte visible del área que se scrolleó (el centro si no se guardó).
+ * Where the cursor ends up in a step: over the click or rest point, or where the mouse was inside the
+ * visible part of the area that was scrolled (the center if it was not saved).
  */
 export function cursorPoint(step: Step, el: Element) {
     if (step.kind !== "scroll") return pointOf(el, step.offset)
     const b = visibleBox(el)
-    // Donde estaba el mouse al grabar, dentro del área; sin dato, el centro
+    // Where the mouse was when recording, inside the area; with no data, the center
     const at = step.at ?? { x: 0.5, y: 0.5 }
     return { x: b.left + (b.right - b.left) * at.x, y: b.top + (b.bottom - b.top) * at.y }
 }
 
 const TYPE_CHAR_MS = 55
 
-/** Escribe el valor como lo haría el navegador: con el setter nativo, para que React y otros frameworks se enteren */
+/** Writes the value as the browser would: with the native setter, so React and other frameworks find out */
 function writeValue(el: HTMLElement, value: string) {
     if (el instanceof HTMLInputElement) {
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(el, value)
@@ -133,8 +133,8 @@ function fireInput(el: HTMLElement, data: string | null, inputType: string) {
 }
 
 /**
- * Escribe el texto en el campo: lo enfoca y lo tipea letra por letra (de golpe en cámara rápida). Si el
- * campo ya empieza con una parte del texto, solo tipea lo que falta; si no, lo vacía primero.
+ * Writes the text into the field: focuses it and types it letter by letter (all at once in fast-forward). If the
+ * field already starts with part of the text, it types only what is missing; otherwise it empties it first.
  */
 async function typeInto(el: HTMLElement, text: string, speed: number, signal: AbortSignal) {
     el.focus({ preventScroll: true })
@@ -161,16 +161,16 @@ async function typeInto(el: HTMLElement, text: string, speed: number, signal: Ab
             await sleep(TYPE_CHAR_MS)
         }
     }
-    // Lo que el navegador dispara al terminar de editar un campo
+    // What the browser fires when a field's editing ends
     el.dispatchEvent(new Event("change", { bubbles: true }))
 }
 
 /**
- * Lo que hay que guardar en un paso cuando el cursor se suelta en (x, y) de la pantalla: el punto relativo a su
- * objetivo. Sin límite: puede quedar fuera del elemento (fracciones menores que 0 o mayores que 1).
+ * What must be saved in a step when the cursor is dropped at screen (x, y): the point relative to its
+ * target. Unbounded: it may end up outside the element (fractions below 0 or above 1).
  */
 export function aimPatch(step: Step, x: number, y: number): Partial<Step> | null {
-    // Un paso viejo sin selector es un punto libre de la ventana
+    // An old step with no selector is a free point of the window
     if (step.selector === "") return { offset: { x: x / window.innerWidth, y: y / window.innerHeight } }
     const el = step.kind === "scroll" ? scrollTarget(step) : findElement(step.selector)
     if (!el) return null
@@ -184,7 +184,7 @@ export function aimPatch(step: Step, x: number, y: number): Partial<Step> | null
     return { offset: { x: (x - r.left) / (w || 1), y: (y - r.top) / (h || 1) } }
 }
 
-/** Guarda el punto donde se soltó el cursor en el modo apuntar */
+/** Saves the point where the cursor was dropped in aim mode */
 export function aimDrop(stepIndex: number, x: number, y: number) {
     const step = getState().script?.steps[stepIndex]
     if (!step) return
@@ -193,8 +193,8 @@ export function aimDrop(stepIndex: number, x: number, y: number) {
 }
 
 /**
- * Scrollea el elemento hasta la posición grabada (fracción del recorrido). A velocidad normal es suave y
- * espera a que termine; en cámara rápida salta directo.
+ * Scrolls the element to the recorded position (a fraction of the range). At normal speed it is smooth and
+ * waits for it to finish; in fast-forward it jumps directly.
  */
 async function scrollToStep(el: Element, offset: Step["offset"], speed: number, signal: AbortSignal) {
     const left = offset.x * Math.max(0, el.scrollWidth - el.clientWidth)
@@ -205,7 +205,7 @@ async function scrollToStep(el: Element, offset: Step["offset"], speed: number, 
         return
     }
     el.scrollTo({ left, top, behavior: "smooth" })
-    // Un scroll suave no avisa cuándo termina de forma confiable: se espera a que la posición deje de cambiar
+    // A smooth scroll does not reliably say when it ends: wait until the position stops changing
     let last = ""
     let still = 0
     for (let frame = 0; frame < 120 && still < 6 && !signal.aborted; frame++) {
@@ -216,11 +216,11 @@ async function scrollToStep(el: Element, offset: Step["offset"], speed: number, 
     }
 }
 
-/** Lleva el cursor al elemento (trayecto animado) y espera a que llegue */
+/** Takes the cursor to the element (animated path) and waits for it to arrive */
 async function glideTo(el: Element, offset: Step["offset"], speed: number) {
     el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" })
     const { x, y } = pointOf(el, offset)
-    // Si el cursor ya está ahí (por ejemplo tras ajustarlo en el modo apuntar) no hay nada que recorrer ni esperar
+    // If the cursor is already there (for example after adjusting it in aim mode) there is nothing to travel or wait for
     const tip = getCursorTip()
     if (tip && Math.hypot(tip.x - x, tip.y - y) < 1.5) return hoverAt(x, y)
     const ms = MOVE_MS / speed
@@ -229,7 +229,7 @@ async function glideTo(el: Element, offset: Step["offset"], speed: number) {
     hoverAt(x, y)
 }
 
-/** Lleva el cursor a un punto libre de la ventana (un paso `rest` sobre una zona sin elementos) */
+/** Takes the cursor to a free point of the window (a `rest` step over an area with no elements) */
 async function glidePoint(point: { x: number; y: number }, speed: number) {
     const ms = MOVE_MS / speed
     moveCursor(point.x, point.y, ms)
@@ -237,7 +237,7 @@ async function glidePoint(point: { x: number; y: number }, speed: number) {
     hoverAt(point.x, point.y)
 }
 
-/** El punto de la pantalla de un paso sin selector: su offset es una fracción de la ventana */
+/** The screen point of a step with no selector: its offset is a fraction of the window */
 export function freePoint(step: Step) {
     return { x: step.offset.x * window.innerWidth, y: step.offset.y * window.innerHeight }
 }
@@ -245,18 +245,18 @@ export function freePoint(step: Step) {
 let waitId = 0
 
 /**
- * Cumple una pausa mostrando su progreso: la línea `gap` se llena durante `ms`. Solo se usa a velocidad normal
- * (en cámara rápida no hay pausas que mostrar).
+ * Elapses a pause showing its progress: line `gap` fills during `ms`. Only used at normal speed
+ * (in fast-forward there are no pauses to show).
  */
 async function wait(gap: number, ms: number) {
     const id = ++waitId
     setState({ waiting: { gap, ms, id } })
     await sleep(ms)
-    // Si mientras tanto se detuvo y arrancó otra corrida, esa pausa nueva no se toca
+    // If in the meantime it was stopped and another run started, that new pause is left alone
     if (getState().waiting?.id === id) setState({ waiting: null })
 }
 
-/** Ejecuta los pasos desde `from` hasta `count` (sin incluirlo). Devuelve el índice del que falló, o null si todos salieron bien */
+/** Runs the steps from `from` up to `count` (not including it). Returns the index of the one that failed, or null if all went well */
 async function runSteps(
     steps: Step[],
     from: number,
@@ -267,15 +267,15 @@ async function runSteps(
     onDone: (index: number) => void = () => {},
     lead?: { index: number; ms: number }
 ): Promise<number | null | "aborted"> {
-    // Al reproducir desde un paso, primero se cumple su pausa: es la línea que se va a cruzar y ese paso ya
-    // se había ejecutado, así que su espera no ocurrió en esta corrida
+    // When playing from a step, its pause is elapsed first: it is the line about to be crossed and that step had
+    // already been executed, so its wait did not happen in this run
     if (lead && lead.ms > 0) {
         setState({ current: lead.index })
         await wait(lead.index, lead.ms)
         if (signal.aborted) return "aborted"
     }
     for (let i = from; i < count; i++) {
-        // La página recién cargada se queda un rato antes del primer click (solo a velocidad normal)
+        // The freshly loaded page stays a while before the first click (only at normal speed)
         if (i === 0 && speed === 1 && startPause > 0) {
             await wait(-1, startPause)
             if (signal.aborted) return "aborted"
@@ -283,19 +283,19 @@ async function runSteps(
         setState({ current: i })
         const step = steps[i]
         if (step.selector === "") {
-            // Movimiento a un punto libre: no hay elemento que buscar ni click que hacer
+            // Move to a free point: there is no element to look for nor click to make
             await glidePoint(freePoint(step), speed)
             if (signal.aborted) return "aborted"
         } else if (step.kind === "type") {
             const el = await waitFor(step.selector)
             if (signal.aborted) return "aborted"
             if (!(el instanceof HTMLElement)) {
-                console.warn(`[recorder] Paso ${i + 1}: no se encontró el campo ${step.selector}`)
+                console.warn(`[recorder] Step ${i + 1}: field not found ${step.selector}`)
                 return i
             }
             await waitStable(el)
             el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" })
-            // El click anterior ya dejó el cursor sobre el campo: solo se mueve si no está ahí
+            // The previous click already left the cursor over the field: it only moves if it is not there
             const last = getLastCursor()
             const box = el.getBoundingClientRect()
             const onField = !!last && last.x >= box.left && last.x <= box.right && last.y >= box.top && last.y <= box.bottom
@@ -307,10 +307,10 @@ async function runSteps(
             const el = step.selector === "html" ? pageScroller() : await waitFor(step.selector)
             if (signal.aborted) return "aborted"
             if (!el) {
-                console.warn(`[recorder] Paso ${i + 1}: no se encontró el elemento ${step.selector}`)
+                console.warn(`[recorder] Step ${i + 1}: element not found ${step.selector}`)
                 return i
             }
-            // La mano va al área que se scrollea (que quede a la vista) y desde ahí se scrollea
+            // The hand goes to the area being scrolled (so it stays in view) and scrolls from there
             if (el !== pageScroller()) el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" })
             await glidePoint(cursorPoint(step, el), speed)
             if (signal.aborted) return "aborted"
@@ -320,13 +320,13 @@ async function runSteps(
             const el = await waitFor(step.selector)
             if (signal.aborted) return "aborted"
             if (!el) {
-                console.warn(`[recorder] Paso ${i + 1}: no se encontró el elemento ${step.selector}`)
+                console.warn(`[recorder] Step ${i + 1}: element not found ${step.selector}`)
                 return i
             }
             await waitStable(el)
             await glideTo(el, step.offset, speed)
             if (signal.aborted) return "aborted"
-            // Un paso `rest` solo lleva el cursor y lo deja ahí: sin hundido, sin anillo y sin click
+            // A `rest` step only takes the cursor there and leaves it: no sinking, no ring and no click
             if (step.kind !== "rest") {
                 const { x, y } = pointOf(el, step.offset)
                 pressCursor(x, y, speed)
@@ -334,9 +334,9 @@ async function runSteps(
             }
         }
         onDone(i)
-        // La pausa que puso la persona es de presentación: solo vale a velocidad normal.
-        // En cámara rápida (viajar a un paso) se salta y queda la pausa corta acelerada.
-        // Tras el último paso no hay pausa: se hace la acción y termina el guion
+        // The pause the person set is for presentation: it only applies at normal speed.
+        // In fast-forward (traveling to a step) it is skipped and the short accelerated pause remains.
+        // After the last step there is no pause: the action is done and the script ends
         if (i === steps.length - 1) break
         if (speed > 1) await sleep(TRAVEL_STEP_GAP_MS / speed)
         else await wait(i, steps[i].pauseAfter ?? DEFAULT_STEP_PAUSE_MS)
@@ -346,16 +346,16 @@ async function runSteps(
 
 let resuming = false
 let abort: AbortController | null = null
-/** Primer paso que todavía no se ejecutó en la corrida en curso (para saber dónde quedó al detener) */
+/** First step not yet executed in the current run (to know where it stopped when halted) */
 let nextStep = 0
 
 /**
- * Ejecuta los pasos [from, to] (ambos incluidos) sobre la página tal como está.
- * Se asume que el estado actual de la app es el correcto para `from - 1`: no se
- * recarga ni se repite nada anterior. Al terminar, el cursor queda donde hizo el
- * último click: la posición es "después del paso `to`".
- * `to = -1` es el estado inicial (nada que ejecutar) y `to = cantidad de pasos`
- * es el nodo final. En esos dos el cursor se va a su lugar de la pantalla: el centro, o donde lo dejó la persona.
+ * Runs steps [from, to] (both included) on the page as it is.
+ * It is assumed that the current app state is the right one for `from - 1`: nothing
+ * earlier is reloaded or repeated. When done, the cursor stays where the
+ * last click was made: the position is "after step `to`".
+ * `to = -1` is the initial state (nothing to run) and `to = number of steps`
+ * is the final node. In those two the cursor goes to its place on screen: the center, or where the person left it.
  */
 async function advance(
     script: Script,
@@ -364,22 +364,22 @@ async function advance(
     speed: number,
     lead?: { index: number; ms: number },
     dim: boolean = speed > 1,
-    // Viene de una página recién recargada (un viaje con recarga): el cursor todavía no está en ningún lado
+    // Coming from a freshly reloaded page (a trip with reload): the cursor is not anywhere yet
     fresh = false
 ) {
     resuming = true
     abort = new AbortController()
     const { signal } = abort
     nextStep = from
-    // Desde la página recién recargada el cursor parte de su lugar del inicio y de ahí viaja al paso 1. En el sitio (sin
-    // recarga) el cursor ya está donde está (parado en el inicio, o posado sobre el objetivo del paso): no se lo mueve
+    // From the freshly reloaded page the cursor starts from its start place and from there travels to step 1. In place (with no
+    // reload) the cursor is already where it is (parked at the start, or resting on the step's target): it is not moved
     if (from === 0 && fresh) {
         const start = parkPoint(script, "start")
         moveCursor(start.x, start.y, 0)
     }
     setState({ pending: to, speed, dim, gap: null, recording: false, selected: null, current: null, waiting: null, failed: null })
 
-    // `to = -1` es el inicio (nada que ejecutar): el cursor se va a su lugar (el centro, o donde lo dejó la persona)
+    // `to = -1` is the start (nothing to run): the cursor goes to its place (the center, or where the person left it)
     const failed = await runSteps(
         script.steps,
         from,
@@ -406,26 +406,26 @@ async function advance(
     setScrollRestoration("auto")
     resuming = false
     if (signal.aborted) return
-    // Si un paso falló, la posición es la anterior a ese paso
+    // If a step failed, the position is the one before that step
     setState({
         pending: null,
         current: null,
         waiting: null,
         failed,
-        // Si el viaje era para abrir una línea, se vuelve a abrir al llegar (con el modo apuntar activo)
+        // If the trip was made to open a line, it is reopened on arrival (with aim mode on)
         gap: getState().reopenGap !== null && failed === null ? getState().reopenGap : null,
         reopenGap: null,
-        // Un fallo nuevo vuelve a mostrar su aviso
+        // A new failure shows its notice again
         failedNoticeClosed: false,
         selected: failed === null ? to : failed - 1,
     })
 }
 
 /**
- * Ir a "después del paso `index`" (-1 = el inicio, sin ningún click). Hacia
- * adelante desde la posición actual se ejecutan solo los pasos que faltan, sobre
- * la página como está. Hacia atrás, o sin posición, se carga startUrl desde cero
- * y, cuando el widget vuelve a montarse, resume() ejecuta todos los anteriores.
+ * Go to "after step `index`" (-1 = the start, with no click). Forward
+ * from the current position only the missing steps are run, on
+ * the page as it is. Backward, or with no position, startUrl is loaded from scratch
+ * and, when the widget mounts again, resume() runs all the previous ones.
  */
 export function travelTo(index: number) {
     setState({ aim: null, reopenGap: null })
@@ -435,22 +435,22 @@ export function travelTo(index: number) {
 function travel(index: number) {
     const { script, selected } = getState()
     if (!script || resuming) return
-    // Tras un fallo la posición es el paso anterior al que falló: la página está en ese estado, así que
-    // también se puede avanzar (reintentar) desde ahí sin recargar
+    // After a failure the position is the step before the one that failed: the page is in that state, so
+    // it is also possible to advance (retry) from there without reloading
     if (selected !== null && index >= selected) {
-        // Un único paso en el sitio es instantáneo: no se oscurece la página, que se vería como un parpadeo
+        // A single step in place is instant: the page is not dimmed, which would look like a flicker
         if (index > selected) void advance(script, selected + 1, index, TRAVEL_SPEED, undefined, index !== selected + 1)
         return
     }
     reloadAndRun(script, index, TRAVEL_SPEED)
 }
 
-/** Al recargar, el navegador devuelve la página al scroll que tenía: para partir de una página limpia se apaga mientras dura el viaje */
+/** On reload, the browser returns the page to the scroll it had: to start from a clean page it is turned off for the duration of the trip */
 function setScrollRestoration(mode: "auto" | "manual") {
     try {
         history.scrollRestoration = mode
     } catch {
-        // algunos entornos no lo permiten
+        // some environments do not allow it
     }
 }
 
@@ -462,17 +462,17 @@ function reloadAndRun(script: Script, index: number, speed: number) {
 }
 
 /**
- * Abre la línea `p`: lleva al estado que ella representa, el anterior al paso que le sigue, y deja el cursor
- * posado sobre su objetivo (modo apuntar). En el sitio si ya estás ahí o antes; si no, recarga y reconstruye en
- * cámara rápida. La línea y el modo se guardan en el estado antes de viajar, para que sobrevivan a la recarga.
+ * Opens line `p`: goes to the state it represents, the one before the step that follows it, and leaves the cursor
+ * resting on its target (aim mode). In place if you are already there or before; otherwise, reloads and rebuilds in
+ * fast-forward. The line and the mode are saved in the state before traveling, so they survive the reload.
  */
 export function openLine(p: number) {
     const { script, selected } = getState()
     if (!script || resuming) return
-    // Toda línea tiene un paso a su derecha: el guion termina en el último paso, sin una línea después
+    // Every line has a step to its right: the script ends at the last step, with no line after it
     setState({ gap: p, aim: p + 1, reopenGap: p })
-    // Los pasos de reposo no cambian la app (solo mueven el cursor): si lo que separa la posición actual de la línea son
-    // solo reposos, la página ya está en el estado de la línea y alcanza con seleccionarla, sin reconstruir nada
+    // Rest steps do not change the app (they only move the cursor): if all that separates the current position from the line is
+    // rests, the page is already in the line's state and selecting it is enough, with nothing to rebuild
     const onlyRests = selected !== null && selected > p && script.steps.slice(p + 1, selected + 1).every((step) => step.kind === "rest")
     if (onlyRests) setState({ selected: p, reopenGap: null })
     else if (selected !== p) travel(p)
@@ -480,8 +480,8 @@ export function openLine(p: number) {
 }
 
 /**
- * Corta el viaje o la reproducción en curso. La página queda como estaba y la
- * posición es el último paso que llegó a ejecutarse, para poder continuar desde ahí.
+ * Cuts the trip or playback in progress. The page stays as it was and the
+ * position is the last step that got executed, so it can continue from there.
  */
 export function stop() {
     abort?.abort()
@@ -498,7 +498,7 @@ export function stop() {
     resuming = false
 }
 
-/** Se llama al montar el widget: si había un viaje en curso, lo termina */
+/** Called when the widget mounts: if there was a trip in progress, it finishes it */
 export async function resume() {
     const { script, pending, speed } = getState()
     if (!script || pending === null || resuming) return
@@ -506,26 +506,26 @@ export async function resume() {
 }
 
 /**
- * Reproducir: sigue desde la posición actual hasta el final; si no hay posición
- * o ya estás en el final, arranca desde cero. Tras un fallo la posición es el paso anterior
- * al que falló, así que reintenta ese paso desde ahí. Desde un paso espera primero su pausa.
+ * Play: continues from the current position to the end; if there is no position
+ * or you are already at the end, it starts from scratch. After a failure the position is the step before
+ * the one that failed, so it retries that step from there. From a step it waits for its pause first.
  */
 export function play() {
     const { script, selected, failed, aim } = getState()
     if (!script || resuming) return
-    // En el modo apuntar el cursor ya está posado sobre el objetivo del paso que sigue: Play hace esa acción de una,
-    // sin cumplir antes la pausa de la línea (ya "cruzaste" esa línea para llegar ahí)
+    // In aim mode the cursor already rests on the target of the next step: Play does that action right away,
+    // without elapsing the line's pause first (you already "crossed" that line to get there)
     const aimed = aim !== null && selected !== null && aim === selected + 1
     setState({ aim: null, reopenGap: null })
-    // Parado en el último paso (o sin posición) no queda nada por continuar: arranca de cero
+    // Standing on the last step (or with no position) there is nothing left to continue: it starts from scratch
     const last = script.steps.length - 1
-    // Tampoco si lo que falta son solo reposos: el cursor se movería y nada más, que no sirve de reproducción
+    // Nor if what remains is only rests: the cursor would move and nothing else, which is no use as a playback
     const onlyRestsLeft = selected !== null && selected >= 0 && script.steps.slice(selected + 1).every((step) => step.kind === "rest")
     if (selected === null || selected >= last || onlyRestsLeft) {
         reloadAndRun(script, last, 1)
     } else {
-        // Parado en un paso, Play cumple primero la pausa de la línea que va a cruzar (la del inicio ya la
-        // cumple el primer paso). Al reintentar tras un fallo no se repite: se quiere volver a probar enseguida.
+        // Standing on a step, Play elapses the pause of the line it is about to cross first (the start one is already
+        // elapsed by the first step). When retrying after a failure it is not repeated: you want to try again right away.
         const lead =
             selected >= 0 && failed === null && !aimed
                 ? { index: selected, ms: script.steps[selected].pauseAfter ?? DEFAULT_STEP_PAUSE_MS }

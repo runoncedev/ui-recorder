@@ -1,17 +1,17 @@
 import { UI_ATTR } from "./types"
 
-// Hover con JS: el navegador no activa `:hover` con eventos sintéticos, pero los listeners de la página
-// (`onMouseEnter` de React, tooltips, menús) sí reaccionan a ellos. Al llegar el cursor a un punto se avisa
-// a la página de que el mouse salió del elemento anterior y entró al nuevo.
+// JS hover: the browser does not trigger `:hover` with synthetic events, but the page's listeners
+// (React's `onMouseEnter`, tooltips, menus) do react to them. When the cursor reaches a point, the page is
+// told that the mouse left the previous element and entered the new one.
 
 let hovered: Element | null = null
 
-/** El elemento de la página bajo el punto, sin contar lo que dibuja el propio widget */
+/** The page element under the point, not counting what the widget itself draws */
 function pageElementAt(x: number, y: number): Element | null {
     return document.elementsFromPoint(x, y).find((el) => !el.closest(`[${UI_ATTR}]`)) ?? null
 }
 
-/** Elementos desde `el` hacia arriba hasta la raíz */
+/** Elements from `el` up to the root */
 function chain(el: Element | null): Element[] {
     const out: Element[] = []
     for (let node = el; node; node = node.parentElement) out.push(node)
@@ -27,7 +27,7 @@ function fire(el: Element, type: string, related: Element | null, x: number, y: 
     }
 }
 
-/** Avisa a la página de que el mouse está ahora en (x, y): sale del elemento anterior y entra al de ese punto */
+/** Tells the page the mouse is now at (x, y): it leaves the previous element and enters the one at that point */
 export function hoverAt(x: number, y: number) {
     const next = pageElementAt(x, y)
     const prev = hovered
@@ -35,7 +35,7 @@ export function hoverAt(x: number, y: number) {
     if (next === prev) return
     const nextChain = chain(next)
     const prevChain = chain(prev)
-    // `enter` y `leave` no burbujean: van a cada ancestro que se deja o se pisa, no a los que quedan en común
+    // `enter` and `leave` do not bubble: they go to each ancestor that is left or entered, not to the ones in common
     const left = prevChain.filter((el) => !nextChain.includes(el))
     const entered = nextChain.filter((el) => !prevChain.includes(el))
 
@@ -50,7 +50,7 @@ export function hoverAt(x: number, y: number) {
     if (next) {
         fire(next, "pointerover", prev, x, y, true)
         fire(next, "mouseover", prev, x, y, true)
-        // de afuera hacia adentro, como el navegador
+        // from the outside in, like the browser
         for (const el of entered.reverse()) {
             fire(el, "pointerenter", prev, x, y, false)
             fire(el, "mouseenter", prev, x, y, false)

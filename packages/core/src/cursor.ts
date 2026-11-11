@@ -1,25 +1,25 @@
-// Canal para que el player mueva el cursor falso durante un viaje sin pasar por
-// React (se emite una posición por paso, no hace falta re-renderizar).
+// Channel for the player to move the fake cursor during a trip without going through
+// React (one position is emitted per step, no need to re-render).
 
 type Listener = (x: number, y: number, ms: number) => void
 
 const listeners = new Set<Listener>()
 
-/** Lo que tarda el cursor en llegar de un elemento al siguiente */
+/** How long the cursor takes to get from one element to the next */
 export const MOVE_MS = 320
 
 let last: { x: number; y: number } | null = null
 let tip: { x: number; y: number } | null = null
 
-/** Última posición a la que se mandó el cursor: el widget que se monta después (tras una recarga) arranca ahí */
+/** Last position the cursor was sent to: a widget mounted later (after a reload) starts there */
 export function getLastCursor() {
     return last
 }
 
-/** Mueve el cursor a (x, y) en `ms` milisegundos (por defecto MOVE_MS) */
+/** Moves the cursor to (x, y) in `ms` milliseconds (MOVE_MS by default) */
 export function moveCursor(x: number, y: number, ms: number = MOVE_MS) {
     last = { x, y }
-    // El destino cuenta como la punta del cursor desde que se manda (llega en `ms`)
+    // The destination counts as the cursor tip from the moment it is sent (it arrives in `ms`)
     tip = { x, y }
     listeners.forEach((listener) => listener(x, y, ms))
 }
@@ -35,7 +35,7 @@ type PressListener = (x: number, y: number, speed: number) => void
 
 const pressListeners = new Set<PressListener>()
 
-/** El cursor "hace click" en (x, y): se hunde y sale un anillo, como en los videos de demo */
+/** The cursor "clicks" at (x, y): it sinks and a ring comes out, as in demo videos */
 export function pressCursor(x: number, y: number, speed = 1) {
     pressListeners.forEach((listener) => listener(x, y, speed))
 }
@@ -48,7 +48,7 @@ export function onCursorPress(listener: PressListener) {
 }
 
 
-/** Dónde está ahora la punta del cursor falso en pantalla (mientras se arrastra o sigue a un elemento) */
+/** Where the fake cursor tip is on screen right now (while being dragged or following an element) */
 export function setCursorTip(x: number, y: number) {
     tip = { x, y }
 }

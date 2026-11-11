@@ -4,8 +4,8 @@ import { Recorder } from "./Recorder"
 export type { Script, Step } from "@ui-recorder/core"
 
 /**
- * Monta la barra del recorder (con React empaquetado adentro, en su propio root).
- * Devuelve la función que la desmonta.
+ * Mounts the recorder bar (with React bundled inside, in its own root).
+ * Returns the function that unmounts it.
  */
 export function mountRecorder(parent: HTMLElement = document.body): () => void {
   const host = document.createElement("div")

@@ -2,28 +2,28 @@ import { StrictMode, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
 import { Recorder } from "@ui-recorder/react"
 
-// Página de prueba: botones sin atributos estables, un panel que aparece y
-// desaparece (estado que los pasos siguientes necesitan), una lista que
-// aparece tarde, una zona donde importa el punto exacto del click y un área con
-// scroll propio (para probar que reproducir lleva a la vista un elemento que
-// está fuera del área visible), un campo de texto controlado (para probar el tipeo) y un
-// menú que se abre con onMouseEnter/onMouseLeave (para probar el hover hecho con JS), con botones
-// adentro y scroll propio.
+// Test page: buttons with no stable attributes, a panel that appears and
+// disappears (state the following steps need), a list that
+// appears late, a zone where the exact click point matters and an area with
+// its own scroll (to test that playing brings into view an element that
+// is outside the visible area), a controlled text field (to test typing) and a
+// menu that opens with onMouseEnter/onMouseLeave (to test the JS-made hover), with buttons
+// inside and its own scroll.
 
 function App() {
     const [count, setCount] = useState(0)
     const [open, setOpen] = useState(false)
-    const [choice, setChoice] = useState("ninguna")
+    const [choice, setChoice] = useState("none")
     const [late, setLate] = useState(false)
     const [point, setPoint] = useState("-")
-    const [row, setRow] = useState("ninguna")
+    const [row, setRow] = useState("none")
     const [text, setText] = useState("")
     const [menu, setMenu] = useState(false)
-    const [menuChoice, setMenuChoice] = useState("ninguna")
+    const [menuChoice, setMenuChoice] = useState("none")
     const menuRef = useRef<HTMLDivElement>(null)
     const [shift, setShift] = useState({ x: 0, y: 0 })
 
-    // El menú sale al costado del botón y se corre lo necesario para no salirse nunca de la pantalla
+    // The menu comes out to the side of the button and shifts as needed so it never leaves the screen
     useLayoutEffect(() => {
         const el = menuRef.current
         if (!menu || !el) return setShift({ x: 0, y: 0 })
@@ -44,25 +44,25 @@ function App() {
     return (
         <main>
             <h1>Playground</h1>
-            <button onClick={() => setCount(count + 1)}>Contador: {count}</button>
+            <button onClick={() => setCount(count + 1)}>Counter: {count}</button>
             <button data-testid="open-panel" onClick={() => setOpen(!open)}>
-                {open ? "Cerrar panel" : "Abrir panel"}
+                {open ? "Close panel" : "Open panel"}
             </button>
             {open && (
                 <div className="panel">
-                    <p>Elegida: {choice}</p>
-                    <button onClick={() => setChoice("A")}>Opción A</button>
-                    <button onClick={() => setChoice("B")}>Opción B</button>
+                    <p>Chosen: {choice}</p>
+                    <button onClick={() => setChoice("A")}>Option A</button>
+                    <button onClick={() => setChoice("B")}>Option B</button>
                 </div>
             )}
             <div>
                 {late ? (
                     <ul>
-                        <li><button onClick={() => setChoice("lista 1")}>Item 1 (tarde)</button></li>
-                        <li><button onClick={() => setChoice("lista 2")}>Item 2 (tarde)</button></li>
+                        <li><button onClick={() => setChoice("list 1")}>Item 1 (late)</button></li>
+                        <li><button onClick={() => setChoice("list 2")}>Item 2 (late)</button></li>
                     </ul>
                 ) : (
-                    <p>cargando lista…</p>
+                    <p>loading list…</p>
                 )}
             </div>
             <div
@@ -74,30 +74,30 @@ function App() {
                     )
                 }}
             >
-                Zona: click en {point}
+                Zone: click at {point}
             </div>
-            <p>Última fila: {row}</p>
+            <p>Last row: {row}</p>
             <div className="scroller">
                 {Array.from({ length: 30 }, (_, i) => (
                     <button key={i} onClick={() => setRow(String(i + 1))}>
-                        Fila {i + 1}
+                        Row {i + 1}
                     </button>
                 ))}
             </div>
             <input
-                placeholder="Escribí algo"
+                placeholder="Type something"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 style={{ display: "block", margin: "12px 0 4px", padding: "6px 8px", width: 320 }}
             />
-            <p>Escribiste: {text}</p>
+            <p>You typed: {text}</p>
             <div
                 style={{ position: "relative", display: "inline-block", margin: "12px 0" }}
                 onMouseEnter={() => setMenu(true)}
                 onMouseLeave={() => setMenu(false)}
             >
                 <button data-testid="hover-target" style={{ margin: 0 }}>
-                    Pasá el mouse
+                    Hover me
                 </button>
                 {menu && (
                     <div
@@ -125,16 +125,16 @@ function App() {
                             <button
                                 key={i}
                                 role="menuitem"
-                                onClick={() => setMenuChoice(`opción ${i + 1}`)}
+                                onClick={() => setMenuChoice(`option ${i + 1}`)}
                                 style={{ margin: 0, textAlign: "left", border: 0, background: "none" }}
                             >
-                                Opción {i + 1}
+                                Option {i + 1}
                             </button>
                         ))}
                     </div>
                 )}
             </div>
-            <p>Menú: {menuChoice}</p>
+            <p>Menu: {menuChoice}</p>
             <Recorder />
         </main>
     )
