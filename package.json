@@ -1,0 +1,13 @@
+{
+  "name": "ui-recorder",
+  "version": "1.0.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.18.0",
+  "type": "module"
+}
