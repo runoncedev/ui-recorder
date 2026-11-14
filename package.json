@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "pnpm -r build",
+    "build:bookmark": "node packages/ui/scripts/build-bookmark.mjs",
     "dev": "pnpm -r --parallel dev"
   },
   "devEngines": {

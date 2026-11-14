@@ -57,6 +57,27 @@ import { mountRecorder } from "@ui-recorder/ui";
 const unmount = mountRecorder(); // returns the function that unmounts it
 ```
 
+### As a browser bookmark
+
+From the repo root, run:
+
+```bash
+pnpm build:bookmark
+```
+
+This builds the app and copies a complete `javascript:` bookmark URL to your clipboard. Create a bookmark named **UI Recorder** in your browser, edit its **URL** (or **Address**) field, and paste. Open a website, click the bookmark, then press **Record** in the floating bar. Clicking the bookmark again while the recorder is open does nothing.
+
+The bookmark includes React, core, and the UI: no hosting, server, or app integration is needed. The build uses source directly, so there is no need to run `pnpm build` first. Rebuild and replace the bookmark URL when you want to update it.
+
+Generated files are `dist/bookmark/bookmarklet.txt` (the bookmark URL) and `dist/bookmark/recorder.js` (the standalone JavaScript). To build without changing your clipboard, run `pnpm build:bookmark --no-copy`. Clipboard support uses `pbcopy` on macOS, `clip.exe` on Windows, or `wl-copy`, `xclip`, or `xsel` on Linux. If copying fails, the generated files are still available.
+
+Bookmark limitations:
+
+- After a full navigation or reload, click the bookmark again to reopen the recorder and resume any pending replay. Recording cannot capture interactions while the recorder is absent.
+- Recordings live in the visited site's `localStorage`; they are separate for each origin.
+- Browser internal pages and some sites with strict Content Security Policy block bookmarklets. The recorder operates in the current document; it cannot record inside cross-origin iframes.
+- The complete app makes a large bookmark URL. Browser/bookmark-sync services may impose size limits; if yours truncates it, a hosted loader or browser extension is needed.
+
 ### The bar
 
 ```
